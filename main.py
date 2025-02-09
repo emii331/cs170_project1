@@ -25,8 +25,10 @@ goal_state = [[1, 2, 3],
              [4, 5, 6],
              [7, 8, 0]]
 
+
 def main():
 
+  # Get user choice of built in or self-created puzzle, difficulty, and algorithm
   puzzle_type = input("Enter '1' to use a built-in puzzle or '2' to create your own:" + '\n')
   print("Selected mode: " + puzzle_type)
 
@@ -38,6 +40,7 @@ def main():
 
   algorithm_choice = select_algorithm()
 
+  # Call general search algorithm with the chosen puzzle and heuristic
   if algorithm_choice == "1":
     general_search(puzzle_to_solve, 1)
   if algorithm_choice == "2":
@@ -47,6 +50,7 @@ def main():
 
   return
 
+# returns the puzzle corresponding to the inputed difficulty
 def select_puzzle_difficulty():
   difficulty_choice = input("Please enter your choice of difficulty for the built-in puzzle on a scale from 0 - 5." + '\n')
   if difficulty_choice == "0":
@@ -62,6 +66,8 @@ def select_puzzle_difficulty():
   if difficulty_choice == "5":
     return very_hard
 
+
+# Asks for user input to create a puzzle
 def create_puzzle():
   print("Please enter a valid 8-puzzle. Delimit numbers with a space, use 0 to represent the blank, and press enter after typing in each row." + '\n')
   row_one = input("Enter the first row: ")
@@ -81,10 +87,14 @@ def create_puzzle():
   user_puzzle = [row_one, row_two, row_three]
   return user_puzzle
 
+
+# Asks for user input to select algorithm to solve puzzle
 def select_algorithm():
   return input("Select an algorithm to solve the puzzle: '1' for Uniform Cost Search, '2' for Misplaced Tile Heuristic, or '3' for Manhattan Distance Heuristic" + '\n')
 
+# General search algorithm used for all three algorithms
 def general_search(puzzle, heuristic):
+  # Initialize variables and initial puzzle state
   initial_state = TreeNode(None, puzzle, 0, 0)
   initial_state.h_n = calc_cost(initial_state.puzzle_state, heuristic)
   nodes = []
@@ -92,14 +102,15 @@ def general_search(puzzle, heuristic):
   max_queue_size = 0
   num_nodes_expanded = 0
   repeated_states = dict()
-  #repeated_states[tuple(tuple(i) for i in initial_state.puzzle_state)] = "Initial Board"
   puzzle_state_tree = []
 
+  # loop while heap is not empty
   while len(nodes) > 0:
     max_queue_size = max(len(nodes), max_queue_size)
     if len(nodes) == 0:
       print("Failed to find goal state" + '\n')
 
+    # pop minimum cost node from the heap
     node = heapq.heappop(nodes)
     if tuple(tuple(i) for i in node.puzzle_state) not in repeated_states:
       num_nodes_expanded += 1
@@ -108,9 +119,11 @@ def general_search(puzzle, heuristic):
     print("The best state to expand with a g(n) = " + str(node.g_n) + " and h(n) = " + str(node.h_n) + " is...\n")
     print_puzzle(node.puzzle_state)
 
+    # check if popped node is the goal state
     if(node.puzzle_state == goal_state):
       print("Found goal state!\n")
 
+      # print out solution path and solution properties
       print("Solution depth was " + str(node.g_n))
       print("Number of nodes expanded: " + str(num_nodes_expanded))
       print("Max queue size: " + str(max_queue_size) + '\n')
@@ -129,6 +142,8 @@ def general_search(puzzle, heuristic):
 
       return
     
+
+    # expand popped node, using the four operations (right, down, left, up)
     expansion = []
 
     zero_coords = find_zero_location(node.puzzle_state)
@@ -137,19 +152,16 @@ def general_search(puzzle, heuristic):
       new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
       move_right = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
       expansion.append(move_right)
-    #zero_coords = find_zero_location(node.puzzle_state)
     if (zero_coords[0] < 2):
       coord_adjust = (1,0)
       new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
       move_down = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
       expansion.append(move_down)    
-    #zero_coords = find_zero_location(node.puzzle_state)
     if (zero_coords[1] > 0):
       coord_adjust = (0,-1)
       new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
       move_left = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
-      expansion.append(move_left)
-    #zero_coords = find_zero_location(node.puzzle_state)    
+      expansion.append(move_left)   
     if (zero_coords[0] > 0):
       coord_adjust = (-1,0)
       new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
@@ -160,8 +172,6 @@ def general_search(puzzle, heuristic):
     for curr_neighbor in expansion:
       if tuple(tuple(i) for i in curr_neighbor.puzzle_state) not in repeated_states:
         heapq.heappush(nodes, curr_neighbor)
-        #print(len(nodes))
-        #print('\n')
     
     expansion = []
 
@@ -175,21 +185,15 @@ def find_zero_location(puzzle):
         return (i, j)
   return None
 
+# gives new puzzle state according to how the zero tile is moved
 def swap(puzzle, zero_coords, coord_adjust):
-  #print(zero_coords)
-  #print('\n')
-  #print(coord_adjust)
-  #print('\n')
-
   new_puzzle = copy.deepcopy(puzzle)
-  #print_puzzle(puzzle)
-  #print("change to \n")
   new_puzzle[zero_coords[0]][zero_coords[1]] = puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]]
   new_puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]] = 0
-  #print_puzzle(new_puzzle)
 
   return new_puzzle
 
+# claculates the cost of the node according to the chosen heuristic
 def calc_cost(puzzle, heuristic):
   if heuristic == 1:
     return 0
