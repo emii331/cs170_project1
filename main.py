@@ -42,6 +42,8 @@ def main():
     general_search(puzzle_to_solve, 1)
   if algorithm_choice == "2":
     general_search(puzzle_to_solve, 2)
+  if algorithm_choice == "3":
+    general_search(puzzle_to_solve, 3)
 
   return
 
@@ -83,12 +85,15 @@ def select_algorithm():
   return input("Select an algorithm to solve the puzzle: '1' for Uniform Cost Search, '2' for Misplaced Tile Heuristic, or '3' for Manhattan Distance Heuristic" + '\n')
 
 def general_search(puzzle, heuristic):
-  initial_state = TreeNode(None, puzzle, 0)
+  initial_state = TreeNode(None, puzzle, 0, 0)
+  initial_state.h_n = calc_cost(initial_state.puzzle_state, heuristic)
   nodes = []
   heapq.heappush(nodes, initial_state)
   max_queue_size = 0
+  num_nodes_expanded = 0
   repeated_states = dict()
-  repeated_states[tuple(tuple(i) for i in initial_state.puzzle_state)] = "Initial Board"
+  #repeated_states[tuple(tuple(i) for i in initial_state.puzzle_state)] = "Initial Board"
+  puzzle_state_tree = []
 
   while len(nodes) > 0:
     max_queue_size = max(len(nodes), max_queue_size)
@@ -96,37 +101,64 @@ def general_search(puzzle, heuristic):
       print("Failed to find goal state" + '\n')
 
     node = heapq.heappop(nodes)
+    if tuple(tuple(i) for i in node.puzzle_state) not in repeated_states:
+      num_nodes_expanded += 1
+      repeated_states[tuple(tuple(i) for i in node.puzzle_state)] = "Visited State"
+
+    print("The best state to expand with a g(n) = " + str(node.g_n) + " and h(n) = " + str(node.h_n) + " is...\n")
     print_puzzle(node.puzzle_state)
+
     if(node.puzzle_state == goal_state):
-      print("Found goal state" + '\n')
+      print("Found goal state!\n")
+
+      print("Solution depth was " + str(node.g_n))
+      print("Number of nodes expanded: " + str(num_nodes_expanded))
+      print("Max queue size: " + str(max_queue_size) + '\n')
+
+      print("Solution Path: ")
+      node_on_solution_path = node
+      solution_path = []
+
+      while(node_on_solution_path != initial_state):
+        solution_path.append(node_on_solution_path)
+        node_on_solution_path = node_on_solution_path.parent
+      solution_path.append(initial_state)
+
+      for i in range(len(solution_path) - 1, -1, -1):
+        print_puzzle(solution_path[i].puzzle_state)
+
       return
     
     expansion = []
 
     zero_coords = find_zero_location(node.puzzle_state)
-    if (zero_coords[0] > 0):
-      coord_adjust = (-1,0)
-      move_up = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_up)
+    if (zero_coords[1] < 2):
+      coord_adjust = (0,1)
+      new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
+      move_right = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
+      expansion.append(move_right)
     #zero_coords = find_zero_location(node.puzzle_state)
     if (zero_coords[0] < 2):
       coord_adjust = (1,0)
-      move_down = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_down)
+      new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
+      move_down = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
+      expansion.append(move_down)    
     #zero_coords = find_zero_location(node.puzzle_state)
     if (zero_coords[1] > 0):
       coord_adjust = (0,-1)
-      move_left = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
+      move_left = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
       expansion.append(move_left)
-    #zero_coords = find_zero_location(node.puzzle_state)
-    if (zero_coords[1] < 2):
-      coord_adjust = (0,1)
-      move_right = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_right)
+    #zero_coords = find_zero_location(node.puzzle_state)    
+    if (zero_coords[0] > 0):
+      coord_adjust = (-1,0)
+      new_puzzle_state = swap(node.puzzle_state, zero_coords, coord_adjust)
+      move_up = TreeNode(node, new_puzzle_state, node.g_n + 1, calc_cost(new_puzzle_state, heuristic))
+      expansion.append(move_up)
+
 
     for curr_neighbor in expansion:
       if tuple(tuple(i) for i in curr_neighbor.puzzle_state) not in repeated_states:
-        repeated_states[tuple(tuple(i) for i in curr_neighbor.puzzle_state)] = "Visited State"
         heapq.heappush(nodes, curr_neighbor)
         #print(len(nodes))
         #print('\n')
@@ -158,10 +190,31 @@ def swap(puzzle, zero_coords, coord_adjust):
 
   return new_puzzle
 
-def calc_cost(heuristic):
+def calc_cost(puzzle, heuristic):
   if heuristic == 1:
     return 0
-  # add for manhattan and misplace tile
+  
+  if heuristic == 2:
+    misplaced_tiles = 0
+    for i in range(0,3):
+      for j in range(0,3):
+        if puzzle[i][j] != 0:
+          if puzzle[i][j] != goal_state[i][j]:
+            misplaced_tiles = misplaced_tiles + 1
+    return misplaced_tiles
+  
+  if heuristic == 3:
+                  #  0     1     2     3     4     5     6     7     8
+    goal_coords = [(2,2),(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1)]
+    manhattan_distance = 0
+    for i in range(0,3):
+      for j in range(0,3):
+        if puzzle[i][j] != 0:
+          x_distance = abs(i - goal_coords[puzzle[i][j]][0])
+          y_distance = abs(j - goal_coords[puzzle[i][j]][1])
+          manhattan_distance = manhattan_distance + x_distance + y_distance
+    return manhattan_distance  
+
 
 def print_puzzle(puzzle):
   for i in range(0,3):
