@@ -1,5 +1,6 @@
-import TreeNode
+from TreeNode import TreeNode
 import heapq
+import copy
 
 # built-in puzzles 
 trivial = [[1, 2, 3],
@@ -82,7 +83,7 @@ def select_algorithm():
   return input("Select an algorithm to solve the puzzle: '1' for Uniform Cost Search, '2' for Misplaced Tile Heuristic, or '3' for Manhattan Distance Heuristic" + '\n')
 
 def general_search(puzzle, heuristic):
-  initial_state = TreeNode.TreeNode(None, puzzle, 0)
+  initial_state = TreeNode(None, puzzle, 0)
   nodes = []
   heapq.heappush(nodes, initial_state)
   max_queue_size = 0
@@ -95,37 +96,45 @@ def general_search(puzzle, heuristic):
       print("Failed to find goal state" + '\n')
 
     node = heapq.heappop(nodes)
-
+    print_puzzle(node.puzzle_state)
     if(node.puzzle_state == goal_state):
       print("Found goal state" + '\n')
+      return
+    
+    expansion = []
 
     zero_coords = find_zero_location(node.puzzle_state)
-    expansion = []
-    
-    if (zero_coords[1] > 0):
-      coord_adjust = (0,-1)
-      move_up = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_up)
-    if (zero_coords[1] < 3):
-      coord_adjust = (0,1)
-      move_down = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_down)
     if (zero_coords[0] > 0):
       coord_adjust = (-1,0)
-      move_left = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
-      expansion.append(move_left)
-    if (zero_coords[0] < 3):
+      move_up = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_up)
+    #zero_coords = find_zero_location(node.puzzle_state)
+    if (zero_coords[0] < 2):
       coord_adjust = (1,0)
-      move_right = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      move_down = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_down)
+    #zero_coords = find_zero_location(node.puzzle_state)
+    if (zero_coords[1] > 0):
+      coord_adjust = (0,-1)
+      move_left = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_left)
+    #zero_coords = find_zero_location(node.puzzle_state)
+    if (zero_coords[1] < 2):
+      coord_adjust = (0,1)
+      move_right = TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
       expansion.append(move_right)
 
     for curr_neighbor in expansion:
-      if tuple(tuple(i) for i in initial_state.puzzle_state) not in repeated_states:
+      if tuple(tuple(i) for i in curr_neighbor.puzzle_state) not in repeated_states:
         repeated_states[tuple(tuple(i) for i in curr_neighbor.puzzle_state)] = "Visited State"
         heapq.heappush(nodes, curr_neighbor)
+        #print(len(nodes))
+        #print('\n')
+    
+    expansion = []
 
-  print("puzzle solved" + '\n')
-  print_puzzle(puzzle)
+  if len(nodes) == 0:
+    print("Failed to find goal state" + '\n')
 
 def find_zero_location(puzzle):
   for i in range(0,3):
@@ -135,9 +144,18 @@ def find_zero_location(puzzle):
   return None
 
 def swap(puzzle, zero_coords, coord_adjust):
-  new_puzzle = puzzle
+  #print(zero_coords)
+  #print('\n')
+  #print(coord_adjust)
+  #print('\n')
+
+  new_puzzle = copy.deepcopy(puzzle)
+  #print_puzzle(puzzle)
+  #print("change to \n")
   new_puzzle[zero_coords[0]][zero_coords[1]] = puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]]
   new_puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]] = 0
+  #print_puzzle(new_puzzle)
+
   return new_puzzle
 
 def calc_cost(heuristic):
