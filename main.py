@@ -87,7 +87,7 @@ def general_search(puzzle, heuristic):
   heapq.heappush(nodes, initial_state)
   max_queue_size = 0
   repeated_states = dict()
-  repeated_states[initial_state.puzzle] = "Initial Board"
+  repeated_states[tuple(tuple(i) for i in initial_state.puzzle_state)] = "Initial Board"
 
   while len(nodes) > 0:
     max_queue_size = max(len(nodes), max_queue_size)
@@ -96,17 +96,54 @@ def general_search(puzzle, heuristic):
 
     node = heapq.heappop(nodes)
 
-    if(node.puzzle == goal_state):
+    if(node.puzzle_state == goal_state):
       print("Found goal state" + '\n')
 
-    # TO-DO: find neighbors and expand from current node
-  
-  
+    zero_coords = find_zero_location(node.puzzle_state)
+    expansion = []
+    
+    if (zero_coords[1] > 0):
+      coord_adjust = (0,-1)
+      move_up = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_up)
+    if (zero_coords[1] < 3):
+      coord_adjust = (0,1)
+      move_down = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_down)
+    if (zero_coords[0] > 0):
+      coord_adjust = (-1,0)
+      move_left = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_left)
+    if (zero_coords[0] < 3):
+      coord_adjust = (1,0)
+      move_right = TreeNode.TreeNode(node, swap(node.puzzle_state, zero_coords, coord_adjust), node.cost + calc_cost(heuristic))
+      expansion.append(move_right)
+
+    for curr_neighbor in expansion:
+      if tuple(tuple(i) for i in initial_state.puzzle_state) not in repeated_states:
+        repeated_states[tuple(tuple(i) for i in curr_neighbor.puzzle_state)] = "Visited State"
+        heapq.heappush(nodes, curr_neighbor)
+
   print("puzzle solved" + '\n')
   print_puzzle(puzzle)
 
-def find_zero_location:
+def find_zero_location(puzzle):
+  for i in range(0,3):
+    for j in range(0,3):
+      if puzzle[i][j] == 0:
+        return (i, j)
+  return None
 
+def swap(puzzle, zero_coords, coord_adjust):
+  new_puzzle = puzzle
+  new_puzzle[zero_coords[0]][zero_coords[1]] = puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]]
+  new_puzzle[zero_coords[0] + coord_adjust[0]][zero_coords[1] + coord_adjust[1]] = 0
+  return new_puzzle
+
+def calc_cost(heuristic):
+  if heuristic == 1:
+    return 0
+  # add for manhattan and misplace tile
 
 def print_puzzle(puzzle):
   for i in range(0,3):
