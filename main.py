@@ -1,3 +1,5 @@
+import TreeNode
+import heapq
 
 # built-in puzzles 
 trivial = [[1, 2, 3],
@@ -18,6 +20,9 @@ hard = [[1, 6, 7],
 very_hard = [[0, 7, 2],
             [4, 6, 1],
             [3, 5, 8]]
+goal_state = [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 0]]
 
 def main():
 
@@ -33,9 +38,9 @@ def main():
   algorithm_choice = select_algorithm()
 
   if algorithm_choice == "1":
-    uniform_cost_search(puzzle_to_solve, 0)
+    general_search(puzzle_to_solve, 1)
   if algorithm_choice == "2":
-    uniform_cost_search(puzzle_to_solve, 1)
+    general_search(puzzle_to_solve, 2)
 
   return
 
@@ -76,9 +81,32 @@ def create_puzzle():
 def select_algorithm():
   return input("Select an algorithm to solve the puzzle: '1' for Uniform Cost Search, '2' for Misplaced Tile Heuristic, or '3' for Manhattan Distance Heuristic" + '\n')
 
-def uniform_cost_search(puzzle, heuristic):
+def general_search(puzzle, heuristic):
+  initial_state = TreeNode.TreeNode(None, puzzle, 0)
+  nodes = []
+  heapq.heappush(nodes, initial_state)
+  max_queue_size = 0
+  repeated_states = dict()
+  repeated_states[initial_state.puzzle] = "Initial Board"
+
+  while len(nodes) > 0:
+    max_queue_size = max(len(nodes), max_queue_size)
+    if len(nodes) == 0:
+      print("Failed to find goal state" + '\n')
+
+    node = heapq.heappop(nodes)
+
+    if(node.puzzle == goal_state):
+      print("Found goal state" + '\n')
+
+    # TO-DO: find neighbors and expand from current node
+  
+  
   print("puzzle solved" + '\n')
   print_puzzle(puzzle)
+
+def find_zero_location:
+
 
 def print_puzzle(puzzle):
   for i in range(0,3):
